@@ -1,5 +1,5 @@
 # chess
-
+  五子棋
 ## Project setup
 ```
 yarn install
