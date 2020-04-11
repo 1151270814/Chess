@@ -2,6 +2,18 @@
   <div class="box">
     <h1>-- 五子棋 --</h1>
     <canvas ref="canvas" width="450" height="450" @click="chessClick"></canvas>
+    <div class="buttonGroup">
+      <div class="restart" @click="restart">
+        <span>重新开始</span>
+      </div>
+
+      <div class="revert">
+        <span>悔棋</span>
+      </div>
+      <div class="removeRevert">
+        <span>撤销悔棋</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -16,7 +28,9 @@ export default {
       chessBoard: [], // 记录是否走过
       wins: [], // 赢法数组
       count: 0, // 所有赢法数量的编号
-      over: false //标记游戏是否结束
+      over: false, //标记游戏是否结束
+      blackWin: [], //黑棋的的数组
+      whiteWin: [] //白棋赢的数组
     };
   },
   computed: {},
@@ -45,7 +59,7 @@ export default {
       }
     },
     onStep(i, j, me) {
-      let { context } = this;
+      const { context } = this;
       context.beginPath();
       //画圆 (0, 2 * Math.PI)==>0到2 PI 角度
       context.arc(15 + i * 30, 15 + j * 30, 13, 0, 2 * Math.PI);
@@ -73,94 +87,125 @@ export default {
     },
     // 填充数组(赢法)
     fillArray() {
-      let { chessBoard, wins, count } = this;
       //二维数组标记棋盘是否下有棋子
       for (let i = 0; i < 15; i++) {
-        chessBoard[i] = [];
+        this.chessBoard[i] = [];
         for (let j = 0; j < 15; j++) {
-          chessBoard[i][j] = 0;
+          this.chessBoard[i][j] = 0;
         }
       }
       /*
         赢法数组
-        i是y轴
-        j是x轴
       */
       for (let i = 0; i < 15; i++) {
-        wins[i] = [];
+        this.wins[i] = [];
         for (let j = 0; j < 15; j++) {
-          wins[i][j] = [];
+          this.wins[i][j] = [];
         }
       }
-      /*横线的赢法
+      /*
         4个格子不能算赢，要去掉4个就是11
         i是y轴
         j是x轴
         k是找5个点
       */
+      //横线的赢法
       for (let i = 0; i < 15; i++) {
         for (let j = 0; j < 11; j++) {
           for (let k = 0; k < 5; k++) {
-            wins[i + k][j + k][count] = true;
+            this.wins[i][j + k][this.count] = true;
           }
-          count++;
+          this.count++;
         }
       }
       //竖线的赢法
       for (let i = 0; i++; i < 15) {
         for (let j = 0; j < 11; j++) {
           for (let k = 0; k < 5; k++) {
-            wins[j + k][i][count] = true;
+            this.wins[j + k][i][this.count] = true;
           }
-          count++;
+          this.count++;
         }
       }
       //正斜线的赢法
       for (let i = 0; i < 11; i++) {
         for (let j = 0; j < 11; j++) {
           for (let k = 0; k < 5; k++) {
-            wins[i + k][j + k][count] = true;
+            this.wins[i + k][j + k][this.count] = true;
           }
-          count++;
+          this.count++;
         }
       }
       //反斜线的赢法
       for (let i = 0; i < 11; i++) {
         for (let j = 14; j > 3; j--) {
           for (let k = 0; k < 5; k++) {
-            wins[i + k][j - k][count] = true;
+            this.wins[i + k][j - k][this.count] = true;
           }
-          count++;
+          this.count++;
         }
+      }
+      // 赢法的统计数组
+      for (let i = 0; i < this.count; i++) {
+        this.blackWin[i] = 0;
+        this.whiteWin[i] = 0;
       }
     },
 
     //落子
     chessClick(e) {
-      let { me, chessBoard, onStep, over } = this;
       //如果游戏结束是不可以下棋
-      if (over) {
+      if (this.over) {
         return;
       }
-
-      if (!me) {
-        return;
-      }
+      //   if (!this.me) {
+      //     return;
+      //   }
       let ox = e.offsetX;
       let oy = e.offsetY;
       //取整
       let i = Math.floor(ox / 30);
       let j = Math.floor(oy / 30);
 
-      if (chessBoard[i][j] == 0) {
-        onStep(i, j, me);
-        if (me) {
-          chessBoard[i][j] = 1;
-        } else {
-          chessBoard[i][j] = 2;
+      if (this.me) {
+        if (this.chessBoard[i][j] == 0) {
+          this.onStep(i, j, this.me);
+          this.chessBoard[i][j] = 1; //黑子
+          for (let k = 0; k < this.count; k++) {
+            if (this.wins[i][j][k]) {
+              this.blackWin[k]++;
+              this.whiteWin[k] = 6; //这个位置对方不可能赢了
+              if (this.blackWin[k] == 5) {
+                window.alert("黑子赢了");
+                this.over = true;
+              }
+            }
+          }
         }
-        this.me = !me;
+      } else {
+        if (this.chessBoard[i][j] == 0) {
+          this.onStep(i, j, this.me);
+          this.chessBoard[i][j] = 2; //白子
+          for (let k = 0; k < this.count; k++) {
+            if (this.wins[i][j][k]) {
+              this.whiteWin[k]++;
+              this.blackWin[k] = 6;
+              if (this.whiteWin[k] == 5) {
+                window.alert("白子赢了");
+                this.over = true;
+              }
+            }
+          }
+        }
       }
+      if (!this.over) {
+        this.me = !this.me;
+        //悔棋的样式点亮
+        // isLightBackground('revert', true);
+      }
+    },
+    restart() {
+      window.location.reload();
     }
   },
   created() {},
@@ -182,5 +227,36 @@ canvas {
   margin: 20px auto;
   background: #fff;
   box-shadow: -2px 0 2px #efefef, 5px 5px 5px #b9b9b9;
+}
+.buttonGroup {
+  width: 500px;
+  margin: 10px auto;
+  display: flex;
+  justify-content: space-around;
+}
+
+.buttonGroup div:hover {
+  cursor: pointer;
+}
+
+.restart {
+  text-align: center;
+  background-color: #45c01a;
+  border-radius: 5px;
+}
+
+.revert,
+.removeRevert {
+  text-align: center;
+  background-color: #b9b9b9;
+  border-radius: 5px;
+}
+
+.restart > span,
+.revert > span,
+.removeRevert > span {
+  display: inline-block;
+  padding: 10px 20px;
+  color: #fff;
 }
 </style>
