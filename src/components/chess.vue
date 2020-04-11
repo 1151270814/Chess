@@ -3,14 +3,13 @@
     <h1>-- 五子棋 --</h1>
     <canvas ref="canvas" width="450" height="450" @click="chessClick"></canvas>
     <div class="buttonGroup">
-      <div class="restart" @click="restart">
+      <div id="restart" class="restart" @click="restart">
         <span>重新开始</span>
       </div>
-
-      <div class="revert">
+      <div id="revert" class="revert" @click="revert">
         <span>悔棋</span>
       </div>
-      <div class="removeRevert">
+      <div id="removeRevert" class="removeRevert" @click="removeRevert">
         <span>撤销悔棋</span>
       </div>
     </div>
@@ -30,7 +29,10 @@ export default {
       count: 0, // 所有赢法数量的编号
       over: false, //标记游戏是否结束
       blackWin: [], //黑棋的的数组
-      whiteWin: [] //白棋赢的数组
+      whiteWin: [], //白棋赢的数组
+      revertFlag: false, //默认悔棋
+      i: 0,
+      j: 0
     };
   },
   computed: {},
@@ -58,6 +60,7 @@ export default {
         context.stroke();
       }
     },
+    //画棋子
     onStep(i, j, me) {
       const { context } = this;
       context.beginPath();
@@ -84,6 +87,15 @@ export default {
       }
       context.fillStyle = gradient;
       context.fill(); // 填充
+    },
+    //撤回按钮的颜色
+    isLightBackground(id, isLight) {
+      var color = document.getElementById(id);
+      if (isLight) {
+        color.style.backgroundColor = "#45c01a";
+      } else {
+        color.style.backgroundColor = "#b9b9b9";
+      }
     },
     // 填充数组(赢法)
     fillArray() {
@@ -158,41 +170,41 @@ export default {
       if (this.over) {
         return;
       }
-      //   if (!this.me) {
-      //     return;
-      //   }
       let ox = e.offsetX;
       let oy = e.offsetY;
       //取整
-      let i = Math.floor(ox / 30);
-      let j = Math.floor(oy / 30);
-
+      this.i = Math.floor(ox / 30);
+      this.j = Math.floor(oy / 30);
       if (this.me) {
-        if (this.chessBoard[i][j] == 0) {
-          this.onStep(i, j, this.me);
-          this.chessBoard[i][j] = 1; //黑子
+        if (this.chessBoard[this.i][this.j] == 0) {
+          this.onStep(this.i, this.j, this.me);
+          this.chessBoard[this.i][this.j] = 1; //黑子
           for (let k = 0; k < this.count; k++) {
-            if (this.wins[i][j][k]) {
+            if (this.wins[this.i][this.j][k]) {
               this.blackWin[k]++;
               this.whiteWin[k] = 6; //这个位置对方不可能赢了
               if (this.blackWin[k] == 5) {
                 window.alert("黑子赢了");
                 this.over = true;
+                this.isLightBackground("revert", true);
+                this.isLightBackground("removeRevert", false);
               }
             }
           }
         }
       } else {
-        if (this.chessBoard[i][j] == 0) {
-          this.onStep(i, j, this.me);
-          this.chessBoard[i][j] = 2; //白子
+        if (this.chessBoard[this.i][this.j] == 0) {
+          this.onStep(this.i, this.j, this.me);
+          this.chessBoard[this.i][this.j] = 2; //白子
           for (let k = 0; k < this.count; k++) {
-            if (this.wins[i][j][k]) {
+            if (this.wins[this.i][this.j][k]) {
               this.whiteWin[k]++;
-              this.blackWin[k] = 6;
+              this.blackWin[k] = 6; //这个位置对方不可能赢了
               if (this.whiteWin[k] == 5) {
                 window.alert("白子赢了");
                 this.over = true;
+                this.isLightBackground("revert", true);
+                this.isLightBackground("removeRevert", false);
               }
             }
           }
@@ -201,9 +213,69 @@ export default {
       if (!this.over) {
         this.me = !this.me;
         //悔棋的样式点亮
-        // isLightBackground('revert', true);
+        this.isLightBackground("revert", true);
+        this.isLightBackground("removeRevert", false);
       }
     },
+    //悔棋事件
+    revert() {
+      if (!this.over && !this.revertFlag) {
+        this.context.clearRect(this.i * 30, this.j * 30, 30, 30); //清除棋子
+        this.chessBoard[this.i][this.j] = 0; //变成了可点击
+        if (!this.me) {
+          for (let k = 0; k < this.count; k++) {
+            if (this.wins[this.i][this.j][k]) {
+              this.blackWin[k]--;
+            }
+          }
+        } else {
+          for (let k = 0; k < this.count; k++) {
+            if (this.wins[this.i][this.j][k]){
+              this.whiteWin[k]--;
+            }
+          }
+        }
+        this.me = !this.me;
+        this.revertFlag = true;
+        //撤销悔棋的样式点亮，悔棋样式disabled
+        this.isLightBackground("revert", false);
+        this.isLightBackground("removeRevert", true);
+      }
+    },
+    //撤销悔棋事件
+    removeRevert() {
+      if (!this.over && this.revertFlag) {
+        if (this.me) {
+          if (this.chessBoard[this.i][this.j] == 0) {
+            this.onStep(this.i, this.j, this.me);//调用画旗子函数
+            this.chessBoard[this.i][this.j] = 1; //黑子
+            for (let k = 0; k < this.count; k++) {
+              if (this.wins[this.i][this.j][k]) {
+                this.blackWin[k]++;
+              }
+            }
+          } else {
+            if (this.chessBoard[this.i][this.j] == 0) {
+              this.onStep(this.i, this.j, this.me);//调用画旗子函数
+              this.chessBoard[this.i][this.j] = 2; //白子
+              for (let k = 0; k < this.count; k++) {
+                if (this.wins[this.i][this.j][k]) {
+                  this.whiteWin[k]++;
+                }
+              }
+            }
+          }
+           if (!this.over) {
+                this.me = !this.me;
+            }
+            this.revertFlag = false;
+            //悔棋的样式点亮，撤销悔棋样式disabled
+            this.isLightBackground('revert', true);
+            this.isLightBackground('removeRevert', false);
+        }
+      }
+    },
+    //重新开始
     restart() {
       window.location.reload();
     }
@@ -241,7 +313,7 @@ canvas {
 
 .restart {
   text-align: center;
-  background-color: #45c01a;
+  background-color: blue;
   border-radius: 5px;
 }
 
