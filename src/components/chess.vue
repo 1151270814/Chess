@@ -12,8 +12,11 @@ export default {
     return {
       chess: {},
       context: {},
-      me: true,
-      chessBoard: []
+      me: true, //标记人是否可以下棋
+      chessBoard: [], // 记录是否走过
+      wins: [], // 赢法数组
+      count: 0, // 所有赢法数量的编号
+      over: false //标记游戏是否结束
     };
   },
   computed: {},
@@ -24,17 +27,11 @@ export default {
       this.chess = this.$refs.canvas;
       this.context = this.chess.getContext("2d");
       this.drawChessBoard();
-      //初始化点击状态
-      for (let i = 0; i < 15; i++) {
-        this.chessBoard[i] = [];
-        for (let j = 0; j < 15; j++) {
-          this.chessBoard[i][j] = 0;
-        }
-      }
+      this.fillArray();
     },
     //   画棋盘
     drawChessBoard() {
-      const { context } = this;
+      let { context } = this;
       context.strokeStyle = "#bfbfbf";
       for (let i = 0; i < 15; i++) {
         //   画竖线
@@ -48,7 +45,7 @@ export default {
       }
     },
     onStep(i, j, me) {
-      const { context } = this;
+      let { context } = this;
       context.beginPath();
       //画圆 (0, 2 * Math.PI)==>0到2 PI 角度
       context.arc(15 + i * 30, 15 + j * 30, 13, 0, 2 * Math.PI);
@@ -74,18 +71,89 @@ export default {
       context.fillStyle = gradient;
       context.fill(); // 填充
     },
+    // 填充数组(赢法)
+    fillArray() {
+      let { chessBoard, wins, count } = this;
+      //二维数组标记棋盘是否下有棋子
+      for (let i = 0; i < 15; i++) {
+        chessBoard[i] = [];
+        for (let j = 0; j < 15; j++) {
+          chessBoard[i][j] = 0;
+        }
+      }
+      /*
+        赢法数组
+        i是y轴
+        j是x轴
+      */
+      for (let i = 0; i < 15; i++) {
+        wins[i] = [];
+        for (let j = 0; j < 15; j++) {
+          wins[i][j] = [];
+        }
+      }
+      /*横线的赢法
+        4个格子不能算赢，要去掉4个就是11
+        i是y轴
+        j是x轴
+        k是找5个点
+      */
+      for (let i = 0; i < 15; i++) {
+        for (let j = 0; j < 11; j++) {
+          for (let k = 0; k < 5; k++) {
+            wins[i + k][j + k][count] = true;
+          }
+          count++;
+        }
+      }
+      //竖线的赢法
+      for (let i = 0; i++; i < 15) {
+        for (let j = 0; j < 11; j++) {
+          for (let k = 0; k < 5; k++) {
+            wins[j + k][i][count] = true;
+          }
+          count++;
+        }
+      }
+      //正斜线的赢法
+      for (let i = 0; i < 11; i++) {
+        for (let j = 0; j < 11; j++) {
+          for (let k = 0; k < 5; k++) {
+            wins[i + k][j + k][count] = true;
+          }
+          count++;
+        }
+      }
+      //反斜线的赢法
+      for (let i = 0; i < 11; i++) {
+        for (let j = 14; j > 3; j--) {
+          for (let k = 0; k < 5; k++) {
+            wins[i + k][j - k][count] = true;
+          }
+          count++;
+        }
+      }
+    },
+
     //落子
     chessClick(e) {
-      console.log(e);
-      const { me, chessBoard } = this;
-      const ox = e.offsetX;
-      const oy = e.offsetY;
+      let { me, chessBoard, onStep, over } = this;
+      //如果游戏结束是不可以下棋
+      if (over) {
+        return;
+      }
+
+      if (!me) {
+        return;
+      }
+      let ox = e.offsetX;
+      let oy = e.offsetY;
       //取整
-      const i = Math.floor(ox / 30);
-      const j = Math.floor(oy / 30);
+      let i = Math.floor(ox / 30);
+      let j = Math.floor(oy / 30);
 
       if (chessBoard[i][j] == 0) {
-        this.onStep(i, j, me);
+        onStep(i, j, me);
         if (me) {
           chessBoard[i][j] = 1;
         } else {
