@@ -61,6 +61,7 @@ export default {
     },
     //画棋子
     drawChess(id, me) {
+      console.log(id, me);
       if (me) {
         $("#" + id).css({
           backgroundImage: `url(${blackImg})`,
@@ -159,17 +160,19 @@ export default {
     },
     //计算赢的数据组
     chessAreaItemClick(e) {
-      this.id = e.target.id;//dom节点原生传递id
+      this.id = e.target.id; //dom节点原生传递id
       if (this.over) {
         return;
       }
-      this.drawChess(this.id, this.me);
       this.j = this.id.split("-")[0];
       this.i = this.id.split("-")[1];
+      //判断画棋前位置是否被画过
+      if (this.chessBoard[this.i][this.j] !== 0) {
+        return;
+      } this.drawChess(this.id, this.me);
       if (this.me) {
-        if (this.chessBoard[this.i][this.j] == 0) {
           this.chessBoard[this.i][this.j] = 1; //黑子
-          console.log(this.chessBoard[this.i][this.j])
+          console.log(this.chessBoard[this.i][this.j]);
           for (var k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.blackWin[k]++;
@@ -182,11 +185,9 @@ export default {
               }
             }
           }
-        }
       } else {
-        if (this.chessBoard[this.i][this.j] == 0) {
           this.chessBoard[this.i][this.j] = 2; //白子
-          console.log(this.chessBoard[this.i][this.j])
+          console.log(this.chessBoard[this.i][this.j]);
           for (let k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.whiteWin[k]++;
@@ -199,7 +200,6 @@ export default {
               }
             }
           }
-        }
       }
       if (!this.over) {
         this.me = !this.me;
@@ -296,10 +296,10 @@ export default {
   created() {},
   mounted() {
     this.init();
-    this.$nextTick(() => {
-      // 动态添加dom元素，并绑定VUE事件（.chessAreaItem为动态添加的元素，放置在父元素.chessArea下）
-      $(".chessArea").on("click", ".chessAreaItem", this.chessAreaItemClick);
-    });
+    // this.$nextTick(() => {
+    // });
+    // 动态添加dom元素，并绑定VUE事件（.chessAreaItem为动态添加的元素，放置在父元素.chessArea下）
+    $(".chessArea").on("click", ".chessAreaItem", this.chessAreaItemClick);
   },
   beforeCreate() {},
   beforeMount() {},
