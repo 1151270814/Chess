@@ -1,15 +1,19 @@
 <template>
   <div class="box">
     <h1>-- 五子棋 --</h1>
-    <canvas ref="canvas" width="450" height="450" @click="chessClick"></canvas>
+
+    <div id="chess" class="chess" style="display:flex;">
+      <div class="chessArea"></div>
+    </div>
     <div class="buttonGroup">
-      <div id="restart" class="restart" @click="restart">
+      <div id="restart" class="restart" @click="restart()">
         <span>重新开始</span>
       </div>
-      <div id="revert" class="revert" @click="revert">
+
+      <div id="revert" class="revert" @click="revert()">
         <span>悔棋</span>
       </div>
-      <div id="removeRevert" class="removeRevert" @click="removeRevert">
+      <div id="removeRevert" class="removeRevert" @click="removeRevert()">
         <span>撤销悔棋</span>
       </div>
     </div>
@@ -17,77 +21,66 @@
 </template>
 
 <script>
+import blackImg from "@/assets/black_flag.png";
+import whiteImg from "@/assets/white_flag.png";
 export default {
   components: {},
   data() {
     return {
       chess: {},
-      context: {},
-      me: true, //标记人是否可以下棋
-      chessBoard: [], // 记录是否走过
-      wins: [], // 赢法数组
       count: 0, // 所有赢法数量的编号
-      over: false, //标记游戏是否结束
+      chessBoard: [], //棋盘
+      wins: [], // 赢法数组
       blackWin: [], //黑棋的的数组
       whiteWin: [], //白棋赢的数组
+      over: false, //标记游戏是否结束
       revertFlag: false, //默认悔棋
       i: 0,
-      j: 0
+      j: 0,
+      //   id: 0,
+      me: true
     };
   },
   computed: {},
   watch: {},
   methods: {
-    //   初始化
+    //  初始化
     init() {
-      this.chess = this.$refs.canvas;
-      this.context = this.chess.getContext("2d");
       this.drawChessBoard();
+      this.initChess();
       this.fillArray();
     },
-    //   画棋盘
+    //画棋盘
     drawChessBoard() {
-      let { context } = this;
-      context.strokeStyle = "#bfbfbf";
-      for (let i = 0; i < 15; i++) {
-        //   画竖线
-        context.moveTo(15 + i * 30, 15);
-        context.lineTo(15 + i * 30, 435);
-        context.stroke(); // 描边
-        // 画横线
-        context.moveTo(15, 15 + i * 30);
-        context.lineTo(435, 15 + i * 30);
-        context.stroke();
+      for (var i = 0; i < 15; i++) {
+        this.chessBoard[i] = [];
+        for (var j = 0; j < 15; j++) {
+          this.chessBoard[i][j] = 0;
+        }
       }
     },
     //画棋子
-    onStep(i, j, me) {
-      const { context } = this;
-      context.beginPath();
-      //画圆 (0, 2 * Math.PI)==>0到2 PI 角度
-      context.arc(15 + i * 30, 15 + j * 30, 13, 0, 2 * Math.PI);
-      context.closePath();
-      //渐变色  2个圆的参数 (15 + i * 30 + 2,15 + i * 30 - 2)==>圆的大小
-      var gradient = context.createRadialGradient(
-        15 + i * 30 + 2,
-        15 + j * 30 - 2,
-        13,
-        15 + i * 30 + 2,
-        15 + j * 30 - 2,
-        0
-      );
+    drawChess(id, me) {
       if (me) {
-        //黑棋
-        gradient.addColorStop(0, "#0A0A0A"); //第1大圆
-        gradient.addColorStop(1, "#636766"); //里面第2个圆
+        $("#" + id).css({
+          backgroundImage: `url(${blackImg})`,
+          backgroundSize: "28px",
+          backgroundRepeat: "no-repeat"
+        });
       } else {
-        //白棋
-        gradient.addColorStop(0, "#D1D1D1"); //第1大圆
-        gradient.addColorStop(1, "#F9F9F9"); //里面第2个圆
+        $("#" + id).css({
+          backgroundImage: `url(${whiteImg})`,
+          backgroundSize: "28px",
+          backgroundRepeat: "no-repeat"
+        });
       }
-      context.fillStyle = gradient;
-      context.fill(); // 填充
     },
+    //删除棋子
+    removeChess(id) {
+      console.log(id);
+      $("#" + id).css("backgroundImage", "none");
+    },
+
     //撤回按钮的颜色
     isLightBackground(id, isLight) {
       var color = document.getElementById(id);
@@ -97,6 +90,7 @@ export default {
         color.style.backgroundColor = "#b9b9b9";
       }
     },
+
     // 填充数组(赢法)
     fillArray() {
       //二维数组标记棋盘是否下有棋子
@@ -163,30 +157,27 @@ export default {
         this.whiteWin[i] = 0;
       }
     },
-
-    //落子
-    chessClick(e) {
-      //如果游戏结束是不可以下棋
+    //计算赢的数据组
+    chessAreaItemClick(e) {
+      this.id = e.target.id;//dom节点原生传递id
       if (this.over) {
         return;
       }
-      let ox = e.offsetX;
-      let oy = e.offsetY;
-      //取整
-      this.i = Math.floor(ox / 30);
-      this.j = Math.floor(oy / 30);
+      this.drawChess(this.id, this.me);
+      this.j = this.id.split("-")[0];
+      this.i = this.id.split("-")[1];
       if (this.me) {
         if (this.chessBoard[this.i][this.j] == 0) {
-          this.onStep(this.i, this.j, this.me);
           this.chessBoard[this.i][this.j] = 1; //黑子
-          for (let k = 0; k < this.count; k++) {
+          console.log(this.chessBoard[this.i][this.j])
+          for (var k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.blackWin[k]++;
               this.whiteWin[k] = 6; //这个位置对方不可能赢了
               if (this.blackWin[k] == 5) {
                 window.alert("黑子赢了");
                 this.over = true;
-                this.isLightBackground("revert", true);
+                this.isLightBackground("revert", false);
                 this.isLightBackground("removeRevert", false);
               }
             }
@@ -194,16 +185,16 @@ export default {
         }
       } else {
         if (this.chessBoard[this.i][this.j] == 0) {
-          this.onStep(this.i, this.j, this.me);
           this.chessBoard[this.i][this.j] = 2; //白子
+          console.log(this.chessBoard[this.i][this.j])
           for (let k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.whiteWin[k]++;
-              this.blackWin[k] = 6; //这个位置对方不可能赢了
+              this.blackWin[k] = 6;
               if (this.whiteWin[k] == 5) {
                 window.alert("白子赢了");
                 this.over = true;
-                this.isLightBackground("revert", true);
+                this.isLightBackground("revert", false);
                 this.isLightBackground("removeRevert", false);
               }
             }
@@ -214,23 +205,23 @@ export default {
         this.me = !this.me;
         //悔棋的样式点亮
         this.isLightBackground("revert", true);
-        this.isLightBackground("removeRevert", false);
       }
     },
     //悔棋事件
     revert() {
       if (!this.over && !this.revertFlag) {
-        this.context.clearRect(this.i * 30, this.j * 30, 30, 30); //清除棋子
-        this.chessBoard[this.i][this.j] = 0; //变成了可点击
+        this.removeChess(this.id);
+        console.log(this.id);
+        this.chessBoard[this.i][this.j] = 0;
         if (!this.me) {
-          for (let k = 0; k < this.count; k++) {
+          for (var k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.blackWin[k]--;
             }
           }
         } else {
           for (let k = 0; k < this.count; k++) {
-            if (this.wins[this.i][this.j][k]){
+            if (this.wins[this.i][this.j][k]) {
               this.whiteWin[k]--;
             }
           }
@@ -242,36 +233,58 @@ export default {
         this.isLightBackground("removeRevert", true);
       }
     },
+
     //撤销悔棋事件
     removeRevert() {
+      console.log(this.id);
       if (!this.over && this.revertFlag) {
         if (this.me) {
           if (this.chessBoard[this.i][this.j] == 0) {
-            this.onStep(this.i, this.j, this.me);//调用画旗子函数
+            this.drawChess(this.id, this.me);
             this.chessBoard[this.i][this.j] = 1; //黑子
-            for (let k = 0; k < this.count; k++) {
+            for (var k = 0; k < this.count; k++) {
               if (this.wins[this.i][this.j][k]) {
                 this.blackWin[k]++;
               }
             }
-          } else {
-            if (this.chessBoard[this.i][this.j] == 0) {
-              this.onStep(this.i, this.j, this.me);//调用画旗子函数
-              this.chessBoard[this.i][this.j] = 2; //白子
-              for (let k = 0; k < this.count; k++) {
-                if (this.wins[this.i][this.j][k]) {
-                  this.whiteWin[k]++;
-                }
+          }
+        } else {
+          if (this.chessBoard[this.i][this.j] == 0) {
+            this.drawChess(this.id, this.me);
+            this.chessBoard[this.i][this.j] = 2; //白子
+            for (let k = 0; k < this.count; k++) {
+              if (this.wins[this.i][this.j][k]) {
+                this.whiteWin[k]++;
               }
             }
           }
-           if (!this.over) {
-                this.me = !this.me;
-            }
-            this.revertFlag = false;
-            //悔棋的样式点亮，撤销悔棋样式disabled
-            this.isLightBackground('revert', true);
-            this.isLightBackground('removeRevert', false);
+        }
+        if (!this.over) {
+          this.me = !this.me;
+        }
+        this.revertFlag = false;
+
+        //悔棋的样式点亮，撤销悔棋样式disabled
+        this.isLightBackground("revert", true);
+        this.isLightBackground("removeRevert", false);
+      }
+    },
+
+    //添加棋盘格子
+    initChess() {
+      let $tbody = $(".chessArea").append(
+        '<table cellspacing="0px"><tbody></tbody></table>'
+      );
+      for (var i = 0; i < 15; i++) {
+        var $tr = $tbody.append("<tr></tr>");
+        for (var j = 0; j < 15; j++) {
+          $tr.append(
+            '<td  class="chessAreaItem" style=" width: 30px;  height: 30px;border: 1px solid #0a0a0a;" id=' +
+              i +
+              "-" +
+              j +
+              "></td>"
+          );
         }
       }
     },
@@ -283,6 +296,10 @@ export default {
   created() {},
   mounted() {
     this.init();
+    this.$nextTick(() => {
+      // 动态添加dom元素，并绑定VUE事件（.chessAreaItem为动态添加的元素，放置在父元素.chessArea下）
+      $(".chessArea").on("click", ".chessAreaItem", this.chessAreaItemClick);
+    });
   },
   beforeCreate() {},
   beforeMount() {},
@@ -294,15 +311,35 @@ export default {
 };
 </script>
 <style  scoped>
-canvas {
-  border: 1px solid #ddd;
-  margin: 20px auto;
-  background: #fff;
-  box-shadow: -2px 0 2px #efefef, 5px 5px 5px #b9b9b9;
+div#chess {
+  width: 480px;
+  height: 480px;
+  padding: 0px;
+  margin: 10px auto 0px auto;
+  box-shadow: -2px -2px 2px #efefef, 5px 5px 5px #b9b9b9;
 }
+
+div.chessArea {
+  display: block;
+  width: 480px;
+  height: 480px;
+  padding: 0px;
+  background: burlywood;
+}
+
+td.chessAreaItem {
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  margin: 0px;
+  top: 0px;
+  bottom: 0px;
+  border: 1px solid #0a0a0a;
+}
+
 .buttonGroup {
   width: 500px;
-  margin: 10px auto;
+  margin: 20px auto;
   display: flex;
   justify-content: space-around;
 }
