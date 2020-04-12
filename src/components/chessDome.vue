@@ -167,9 +167,9 @@ export default {
       this.j = this.id.split("-")[0];
       this.i = this.id.split("-")[1];
       //判断画棋前位置是否被画过
-      if (this.chessBoard[this.i][this.j] !== 0) {
+      if ( this.chessBoard &&this.chessBoard[this.i][this.j] !== 0)
         return;
-      } this.drawChess(this.id, this.me);
+      this.drawChess(this.id, this.me);
       if (this.me) {
           this.chessBoard[this.i][this.j] = 1; //黑子
           console.log(this.chessBoard[this.i][this.j]);
