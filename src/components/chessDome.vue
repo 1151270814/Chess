@@ -172,7 +172,7 @@ export default {
       this.drawChess(this.id, this.me);
       if (this.me) {
           this.chessBoard[this.i][this.j] = 1; //黑子
-          console.log(this.chessBoard[this.i][this.j]);
+          // console.log(this.chessBoard[this.i][this.j]);
           for (var k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.blackWin[k]++;
@@ -187,7 +187,7 @@ export default {
           }
       } else {
           this.chessBoard[this.i][this.j] = 2; //白子
-          console.log(this.chessBoard[this.i][this.j]);
+          // console.log(this.chessBoard[this.i][this.j]);
           for (let k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.whiteWin[k]++;
