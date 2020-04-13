@@ -213,7 +213,6 @@ export default {
         }
       }
       if (!this.over) {
-
         //悔棋的样式点亮
         this.isLightBackground("revert", true);
         this.isLightBackground("removeRevert", false);
