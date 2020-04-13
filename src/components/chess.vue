@@ -179,6 +179,7 @@ export default {
         if (this.chessBoard[this.i][this.j] == 0) {
           this.onStep(this.i, this.j, this.me);
           this.chessBoard[this.i][this.j] = 1; //黑子
+           this.me = !this.me;
           for (let k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.blackWin[k]++;
@@ -196,6 +197,7 @@ export default {
         if (this.chessBoard[this.i][this.j] == 0) {
           this.onStep(this.i, this.j, this.me);
           this.chessBoard[this.i][this.j] = 2; //白子
+           this.me = !this.me;
           for (let k = 0; k < this.count; k++) {
             if (this.wins[this.i][this.j][k]) {
               this.whiteWin[k]++;
@@ -211,7 +213,7 @@ export default {
         }
       }
       if (!this.over) {
-        this.me = !this.me;
+
         //悔棋的样式点亮
         this.isLightBackground("revert", true);
         this.isLightBackground("removeRevert", false);
